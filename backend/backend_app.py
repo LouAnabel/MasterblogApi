@@ -26,6 +26,7 @@ def validate_post_data(data, data_id):
     if not data or 'title' not in data or 'content' not in data:
         return jsonify({"error" : "Both 'title' and 'post content' required!"})
 
+
 @app.route('/api/posts', methods=['GET'])
 @limiter.limit("30 per minute")
 def get_posts():
@@ -97,6 +98,35 @@ def add_post():
     }
     POSTS.append(new_post)
     return jsonify(new_post), 201
+
+
+@app.route('/api/posts/<int:post_id>', methods=["DELETE"])
+def delete_post(post_id):
+    post = next((post for post in POSTS if post["post_id"] == post_id), None)
+
+    if post:
+        POSTS.remove(post)
+        return jsonify({"message": f"Post with id {post_id} has been deleted successfully."}), 200
+    else:
+        return jsonify({"error": "Post not found"}), 404
+
+
+@app.route('/api/posts/<int:post_id>', methods=["PUT"])
+def update_post(post_id):
+    post = next((post for post in POSTS if post["post_id"] == post_id), None)
+
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+
+    data = request.get_json()
+
+    if "title" in data:
+        post["title"] = data["title"]
+    if "content" in data:
+        post["content"] = data["content"]
+
+    return jsonify(post), 200
+
 
 """Error Handling"""
 @app.errorhandler(404)
