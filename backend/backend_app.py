@@ -3,28 +3,37 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-
 app = Flask(__name__)
 limiter = Limiter(app=app, key_func=get_remote_address)
 #CORS(app, resources={r"/*": {"origins": "http://127.0.0.1:5001"}})
-# This will enable CORS for all routes
 CORS(app, resources={r"/api/*": {"origins": "http://127.0.0.1:5001"}})
 
 
 POSTS = [
-    {"id": 1, "title": "First post", "content": "This is the first post."},
-    {"id": 2, "title": "Second post", "content": "This is the second post."},
+    {"post_id": 1, "title": "First post", "content": "This is the first post."},
+    {"post_id": 2, "title": "Second post", "content": "This is the second post."},
 ]
+
+"""Error Handling"""
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({"error": str(error)}), 404
+
+
+@app.errorhandler(429)
+def ratelimit_error(error):
+    return jsonify({"error": str(error)}), 429
+
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({"error": str(error)}), 405
 
 
 @app.route("/")
 def home():
-    #welcome page
+    """Welcome Page"""
     return "Welcome to the Masterblog API"
-
-def validate_post_data(data, data_id):
-    if not data or 'title' not in data or 'content' not in data:
-        return jsonify({"error" : "Both 'title' and 'post content' required!"})
 
 
 @app.route('/api/posts', methods=['GET'])
@@ -145,22 +154,6 @@ def search_posts():
             matching_posts.append(post)
 
     return jsonify(matching_posts), 200
-
-
-"""Error Handling"""
-@app.errorhandler(404)
-def not_found_error(error):
-    return jsonify({"error": str(error)}), 404
-
-
-@app.errorhandler(429)
-def ratelimit_error(error):
-    return jsonify({"error": str(error)}), 429
-
-
-@app.errorhandler(405)
-def method_not_allowed(error):
-    return jsonify({"error": str(error)}), 405
 
 
 if __name__ == '__main__':
