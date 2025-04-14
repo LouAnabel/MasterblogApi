@@ -1,17 +1,21 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
 
 app = Flask(__name__)
 limiter = Limiter(app=app, key_func=get_remote_address)
 #CORS(app, resources={r"/*": {"origins": "http://127.0.0.1:5001"}})
+# This will enable CORS for all routes
 CORS(app, resources={r"/api/*": {"origins": "http://127.0.0.1:5001"}})
-CORS(app)  # This will enable CORS for all routes
+
 
 POSTS = [
     {"id": 1, "title": "First post", "content": "This is the first post."},
     {"id": 2, "title": "Second post", "content": "This is the second post."},
 ]
+
 
 @app.route("/")
 def home():
@@ -93,6 +97,21 @@ def add_post():
     }
     POSTS.append(new_post)
     return jsonify(new_post), 201
+
+"""Error Handling"""
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({"error": str(error)}), 404
+
+
+@app.errorhandler(429)
+def ratelimit_error(error):
+    return jsonify({"error": str(error)}), 429
+
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({"error": str(error)}), 405
 
 
 if __name__ == '__main__':
