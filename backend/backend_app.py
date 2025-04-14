@@ -128,6 +128,25 @@ def update_post(post_id):
     return jsonify(post), 200
 
 
+@app.route('/api/posts/search', methods=["GET"])
+def search_posts():
+    title_query = request.args.get("title", "").lower()
+    content_query = request.args.get("content", "").lower()
+
+    matching_posts = []
+    for post in POSTS:
+        post_title_lower = post["title"].lower()
+        post_content_lower = post["content"].lower()
+
+        title_match = title_query in post_title_lower if title_query else True
+        content_match = content_query in post_content_lower if content_query else True
+
+        if title_match and content_match:
+            matching_posts.append(post)
+
+    return jsonify(matching_posts), 200
+
+
 """Error Handling"""
 @app.errorhandler(404)
 def not_found_error(error):
