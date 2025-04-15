@@ -17,27 +17,16 @@ function loadPosts() {
 
     // Use the Fetch API to send a GET request to the /posts endpoint
     fetch(baseUrl + '/posts')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok: ' + response.statusText);
-            }
-            return response.json();
-        })
+        .then(response => response.json())  // Parse the JSON data from the response
         .then(data => {  // Once the data is ready, we can use it
+
+            const posts = data.posts;
             // Clear out the post container first
             const postContainer = document.getElementById('post-container');
             postContainer.innerHTML = '';
 
-            // Handle the response structure correctly - get posts from the posts array
-            const posts = data.posts || data; // Handle both paginated and non-paginated responses
-
-            if (posts.length === 0) {
-                postContainer.innerHTML = '<p>No posts found.</p>';
-                return;
-            }
-
             // For each post in the response, create a new post element and add it to the page
-            posts.forEach(post => {
+            data.posts.forEach(post => {
                 const postDiv = document.createElement('div');
                 postDiv.className = 'post';
                 postDiv.innerHTML = `<h2>${post.title}</h2><p>${post.content}</p>
@@ -45,14 +34,41 @@ function loadPosts() {
                 postContainer.appendChild(postDiv);
             });
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to load posts: ' + error.message);
-        });
+        .catch(error => console.error('Error:', error));  // If an error occurs, log it to the console
 }
 
 // Function to send a POST request to the API to add a new post
 function addPost() {
     // Retrieve the values from the input fields
     var baseUrl = document.getElementById('api-base-url').value;
-    var postTitle = document.getElementById('post-title').
+    var postTitle = document.getElementById('post-title').value;
+    var postContent = document.getElementById('post-content').value;
+
+    // Use the Fetch API to send a POST request to the /posts endpoint
+    fetch(baseUrl + '/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: postTitle, content: postContent })
+    })
+    .then(response => response.json())  // Parse the JSON data from the response
+    .then(post => {
+        console.log('Post added:', post);
+        loadPosts(); // Reload the posts after adding a new one
+    })
+    .catch(error => console.error('Error:', error));  // If an error occurs, log it to the console
+}
+
+// Function to send a DELETE request to the API to delete a post
+function deletePost(postId) {
+    var baseUrl = document.getElementById('api-base-url').value;
+
+    // Use the Fetch API to send a DELETE request to the specific post's endpoint
+    fetch(baseUrl + '/posts/' + postId, {
+        method: 'DELETE'
+    })
+    .then(response => {
+        console.log('Post deleted:', postId);
+        loadPosts(); // Reload the posts after deleting one
+    })
+    .catch(error => console.error('Error:', error));  // If an error occurs, log it to the console
+}

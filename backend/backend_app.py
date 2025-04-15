@@ -34,9 +34,6 @@ def ratelimit_error(error):
     return jsonify({"error": str(error)}), 429
 
 
-
-
-
 @app.route("/")
 def home():
     """Welcome Page"""
