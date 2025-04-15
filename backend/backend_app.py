@@ -3,9 +3,10 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+
 app = Flask(__name__)
 limiter = Limiter(app=app, key_func=get_remote_address)
-#CORS(app, resources={r"/*": {"origins": "http://127.0.0.1:5001"}})
+#Runs CORS App
 CORS(app, resources={r"/api/*": {"origins": "http://127.0.0.1:5001"}})
 
 
@@ -15,19 +16,25 @@ POSTS = [
 ]
 
 """Error Handling"""
+
+@app.errorhandler(400)
+def bad_request_error(error):
+    return jsonify({"error": str(error)}), 400
+
 @app.errorhandler(404)
 def not_found_error(error):
     return jsonify({"error": str(error)}), 404
 
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({"error": str(error)}), 405
 
 @app.errorhandler(429)
 def ratelimit_error(error):
     return jsonify({"error": str(error)}), 429
 
 
-@app.errorhandler(405)
-def method_not_allowed(error):
-    return jsonify({"error": str(error)}), 405
+
 
 
 @app.route("/")
@@ -52,14 +59,7 @@ def get_posts():
     if sort_direction not in ["asc", "desc"]:
         return jsonify({"error": "Sort direction must be either 'asc' or 'desc'."}), 400
 
-    # Sorting logic
-    sorted(
-        POSTS,
-        key=lambda post: post.get(sort_field, "").lower() if sort_field else None,
-        reverse=(sort_direction == "desc")
-    ) if sort_field else POSTS
-
-    # Sorting logic
+    # Sorting logic - fixed to avoid duplicate operation
     sorted_posts = sorted(
         POSTS,
         key=lambda post: post.get(sort_field, "").lower() if sort_field else None,
@@ -93,20 +93,26 @@ def get_posts():
 
 @app.route("/api/posts", methods=["POST"])
 def add_post():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Invalid JSON data"}), 400
 
-    if not data or "title" not in data or "content" not in data:
-        return jsonify({"error": "Both 'title' and 'content' are required"}), 400
+        if "title" not in data or "content" not in data:
+            return jsonify({"error": "Both 'title' and 'content' are required"}), 400
 
-    new_id = max(post["post_id"] for post in POSTS) + 1 if POSTS else 1
+        new_id = max(post["post_id"] for post in POSTS) + 1 if POSTS else 1
 
-    new_post = {
-        "post_id": new_id,
-        "title": data["title"],
-        "content": data["content"],
-    }
-    POSTS.append(new_post)
-    return jsonify(new_post), 201
+        new_post = {
+            "post_id": new_id,
+            "title": data["title"],
+            "content": data["content"],
+        }
+        POSTS.append(new_post)
+        return jsonify(new_post), 201
+    except Exception as e:
+        return jsonify({"error": f"Failed to process request: {str(e)}"}), 400
+
 
 
 @app.route('/api/posts/<int:post_id>', methods=["DELETE"])
@@ -122,19 +128,25 @@ def delete_post(post_id):
 
 @app.route('/api/posts/<int:post_id>', methods=["PUT"])
 def update_post(post_id):
-    post = next((post for post in POSTS if post["post_id"] == post_id), None)
+    try:
+        post = next((post for post in POSTS if post["post_id"] == post_id), None)
 
-    if not post:
-        return jsonify({"error": "Post not found"}), 404
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
 
-    data = request.get_json()
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Invalid JSON data"}), 400
 
-    if "title" in data:
-        post["title"] = data["title"]
-    if "content" in data:
-        post["content"] = data["content"]
+        if "title" in data:
+            post["title"] = data["title"]
+        if "content" in data:
+            post["content"] = data["content"]
 
-    return jsonify(post), 200
+        return jsonify(post), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to process request: {str(e)}"}), 400
+
 
 
 @app.route('/api/posts/search', methods=["GET"])
