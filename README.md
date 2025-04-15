@@ -2,7 +2,7 @@
 
 A simple blog API and frontend application built with Flask.
 
-![Flask Blog Screenshot](images/pictureofapp.png)
+![Flask Blog Screenshot](images/PictureOfApp.png)
 
 ## Project Overview
 
